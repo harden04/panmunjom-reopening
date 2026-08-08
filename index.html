@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>다시 여는 판문점 — 일반견학 재개 설계 엔진</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="data.js"></script>
+<style>
+  :root {
+    color-scheme: light;
+    --surface-1: #fcfcfb; --page: #f9f9f7;
+    --ink-1: #0b0b0b; --ink-2: #52514e; --ink-muted: #898781;
+    --grid: #e1e0d9; --axis: #c3c2b7; --ring: rgba(11,11,11,0.10);
+    --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a;
+    --seq-250: #86b6ef; --seq-450: #2a78d6; --seq-600: #184f95;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --surface-1: #1a1a19; --page: #0d0d0d;
+      --ink-1: #ffffff; --ink-2: #c3c2b7; --ink-muted: #898781;
+      --grid: #2c2c2a; --axis: #383835; --ring: rgba(255,255,255,0.10);
+      --s1: #3987e5; --s2: #d95926; --s3: #199e70;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --surface-1: #1a1a19; --page: #0d0d0d;
+    --ink-1: #ffffff; --ink-2: #c3c2b7; --ink-muted: #898781;
+    --grid: #2c2c2a; --axis: #383835; --ring: rgba(255,255,255,0.10);
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif;
+    background: var(--page); color: var(--ink-1); line-height: 1.55;
+  }
+  body.big { font-size: 118%; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 24px 16px 64px; }
+  header.site { display: flex; flex-wrap: wrap; gap: 12px; align-items: baseline; justify-content: space-between; margin-bottom: 8px; }
+  h1 { font-size: 1.45rem; }
+  .sub { color: var(--ink-2); margin: 4px 0 18px; max-width: 72ch; }
+  .toolbar { display: flex; gap: 8px; }
+  .toolbar button {
+    font: inherit; font-size: .85rem; padding: 6px 12px; border-radius: 8px;
+    border: 1px solid var(--ring); background: var(--surface-1); color: var(--ink-1); cursor: pointer;
+  }
+  .heroes { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin: 18px 0 28px; }
+  .hero { background: var(--surface-1); border: 1px solid var(--ring); border-radius: 12px; padding: 16px 18px; }
+  .hero .v { font-size: 1.9rem; font-weight: 700; }
+  .hero .k { color: var(--ink-2); font-size: .86rem; margin-top: 2px; }
+  .hero .src { color: var(--ink-muted); font-size: .74rem; margin-top: 6px; }
+  section { background: var(--surface-1); border: 1px solid var(--ring); border-radius: 14px; padding: 20px; margin-bottom: 22px; }
+  h2 { font-size: 1.08rem; margin-bottom: 4px; }
+  .desc { color: var(--ink-2); font-size: .88rem; margin-bottom: 14px; max-width: 78ch; }
+  .chart-box { position: relative; width: 100%; }
+  details.tbl { margin-top: 10px; }
+  details.tbl summary { color: var(--ink-muted); font-size: .8rem; cursor: pointer; }
+  table { border-collapse: collapse; font-size: .82rem; margin-top: 8px; width: 100%; }
+  th, td { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--grid); }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .topics { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .topics button {
+    font: inherit; font-size: .84rem; padding: 6px 12px; border-radius: 999px;
+    border: 1px solid var(--ring); background: transparent; color: var(--ink-1); cursor: pointer;
+  }
+  .topics button[aria-pressed="true"] { background: var(--s1); border-color: var(--s1); color: #fff; }
+  .quote { border-left: 3px solid var(--s1); padding: 8px 14px; margin: 10px 0; color: var(--ink-2); font-size: .92rem; background: color-mix(in srgb, var(--s1) 5%, transparent); border-radius: 0 8px 8px 0; }
+  .quote .meta { color: var(--ink-muted); font-size: .76rem; margin-top: 4px; }
+  .stage { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+  .stage .card { border: 1px solid var(--ring); border-radius: 12px; padding: 16px; }
+  .stage h3 { font-size: .98rem; margin-bottom: 8px; }
+  .stage ul { padding-left: 18px; color: var(--ink-2); font-size: .9rem; }
+  .stage li { margin: 5px 0; }
+  .badge { display: inline-block; font-size: .72rem; padding: 2px 8px; border-radius: 999px; margin-left: 6px; vertical-align: middle; }
+  .badge.ops { background: color-mix(in srgb, var(--s3) 18%, transparent); color: var(--ink-1); }
+  .badge.policy { background: color-mix(in srgb, var(--s2) 18%, transparent); color: var(--ink-1); }
+  footer { color: var(--ink-muted); font-size: .78rem; margin-top: 28px; }
+  footer a { color: inherit; }
+  @media (max-width: 640px) { h1 { font-size: 1.2rem; } .hero .v { font-size: 1.5rem; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <div>
+      <h1>다시 여는 판문점</h1>
+      <p class="sub">통일부가 개방한 판문점견학 설문 데이터 4,517건을 분석해, 3년째 중단된 일반견학이
+      재개되는 날 무엇부터 개선해야 하는지를 설계합니다. 기존 판문점견학지원센터 위에 얹는 데이터 레이어입니다.</p>
+    </div>
+    <div class="toolbar">
+      <button id="btnFont" aria-pressed="false" title="글자 크게">가+</button>
+      <button id="btnTheme" title="화면 모드 전환">☾/☀</button>
+    </div>
+  </header>
+
+  <div class="heroes" id="heroes"></div>
+
+  <section aria-labelledby="h-yearly">
+    <h2 id="h-yearly">① 응답의 시계열 — 중단은 데이터 공백으로 남았다</h2>
+    <p class="desc">주관식 응답 수(전체 4,517건). 2023년 7월 견학 중단 이후 <strong>2024년 응답은 0건</strong>,
+    2025년은 특별견학(정책고객 대상)만 재개된 상태의 62건입니다.</p>
+    <div class="chart-box"><canvas id="cYearly" height="120" role="img" aria-label="연도별 주관식 응답 수 막대 차트. 2021년 1284건, 2022년 1622건, 2023년 1549건, 2024년 0건, 2025년 62건."></canvas></div>
+    <details class="tbl"><summary>표로 보기</summary><table id="tYearly"></table></details>
+  </section>
+
+  <section aria-labelledby="h-top10">
+    <h2 id="h-top10">② 재개 시 우선 개선 과제 Top 10</h2>
+    <p class="desc">개선 수요(불만+제안 1,477건)를 <em>빈도 × 불만 강도 × 실행 난이도</em>로 점수화했습니다.
+    즉시 실행 가능한(운영 개선) 과제일수록 높은 가중치 — 재개 첫날부터 반영할 수 있는 것부터 순서대로.</p>
+    <div class="chart-box"><canvas id="cTop10" height="220" role="img" aria-label="우선 개선 과제 상위 10개 가로 막대 차트"></canvas></div>
+    <details class="tbl"><summary>표로 보기 (산식 값 포함)</summary><table id="tTop10"></table></details>
+  </section>
+
+  <section aria-labelledby="h-before">
+    <h2 id="h-before">③ 전과 후 — 재개 요구가 지배적 신호가 되었다</h2>
+    <p class="desc">일반견학기(2021~23, 4,188건)와 특별견학기(2025, 39건)의 주제 분포 비교.
+    <strong>'재개·대상 확대' 요구가 5.1% → 33.3%</strong>로 뛰었습니다. 견학이 멈춘 동안에도
+    홈페이지 설문에는 1,165건의 응답이 쌓였습니다(주별 응답 집계 데이터) — 대기 수요입니다.</p>
+    <div class="chart-box"><canvas id="cBefore" height="150" role="img" aria-label="일반견학기와 특별견학기의 주제 분포 비교 막대 차트"></canvas></div>
+    <details class="tbl"><summary>표로 보기</summary><table id="tBefore"></table></details>
+  </section>
+
+  <section aria-labelledby="h-drill">
+    <h2 id="h-drill">④ 주제별 들여다보기</h2>
+    <p class="desc">주제를 고르면 감성 구성과 실제 목소리(비식별)를 보여줍니다.</p>
+    <div class="topics" id="topicBtns" role="group" aria-label="주제 선택"></div>
+    <div class="chart-box"><canvas id="cDrill" height="70" role="img" aria-label="선택한 주제의 감성 구성"></canvas></div>
+    <div id="quotes"></div>
+  </section>
+
+  <section aria-labelledby="h-stage">
+    <h2 id="h-stage">⑤ 데이터가 말하는 재개 설계 — 2단 구조</h2>
+    <p class="desc">개선 수요의 난이도 분석 결과: 운영 개선(OPS)만으로 가능한 요구가 690건,
+    기관 협의가 필요한 요구(POLICY)가 607건. 재개 설계는 두 트랙으로 나뉩니다.</p>
+    <div class="stage">
+      <div class="card">
+        <h3>1단계 — 재개 즉시 반영 <span class="badge ops">운영 개선</span></h3>
+        <ul>
+          <li><strong>시간 배분 재설계</strong> (요구 288건 중 98%가 운영 개선): 사진 촬영 2~3분 → 5분+, 상징 장소(T2·도보다리) 체류 우선</li>
+          <li><strong>예약 운영 개선</strong>: 취소분 자동 재배정, 결과 통보 단축, 일괄(단체) 등록</li>
+          <li><strong>사전 안내 강화</strong>: 소요시간·복장·소지품 안내 영상, 구식 정보 정정</li>
+          <li><strong>날씨 대응 운영</strong>: 우천 시 일정 변경 안내 절차</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>2단계 — 협의 로드맵 <span class="badge policy">제도·협의</span></h3>
+        <ul>
+          <li><strong>견학 기회 확대</strong> (재개 요구 228건): 회차·인원 단계 확대, 대상별(일반→학생·가족→외국인) 순차 개방</li>
+          <li><strong>코스 확장</strong> (218건): 돌아오지 않는 다리·대성동 등 — 유엔사 협의 사안</li>
+          <li><strong>외국인 세그먼트</strong>: 파주 DMZ 관광 월평균 4만 명, 외국인 76% — 수요는 검증됨</li>
+          <li><strong>기념품·기록 서비스</strong> (95건): 자체 수익모델로 운영비 일부 상쇄</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-paju">
+    <h2 id="h-paju">⑥ 참고 — 접경 관광 수요는 이미 크다 (결합 데이터)</h2>
+    <p class="desc">경기도 파주시 DMZ평화관광 월별 관광객(2024.1~). 내국인·외국인 구분.
+    판문점 일반견학이 재개될 때 맞이할 수요의 규모를 보여줍니다.</p>
+    <div class="chart-box"><canvas id="cPaju" height="130" role="img" aria-label="파주시 DMZ평화관광 월별 관광객 수 선 차트, 내국인과 외국인 두 계열"></canvas></div>
+    <details class="tbl"><summary>표로 보기</summary><table id="tPaju"></table></details>
+  </section>
+
+  <footer>
+    데이터: 공공데이터포털(data.go.kr) — 통일부_판문점견학 설문 주관식 응답 결과 · 설문 응답 집계 · 설문정보(이상 이용허락 제한 없음),
+    경기도 파주시_DMZ평화관광이용현황. 분류: LLM(Claude) 배치 분류 + 블라인드 표본 검증. 인용문은 비식별 처리.
+    <br>본 페이지는 「2026년 통일부 공공데이터 활용 공모전」 출품을 위해 제작된 비공식 분석입니다.
+  </footer>
+</div>
+
+<script>
+const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+let charts = [];
+
+function inkDefaults() {
+  Chart.defaults.color = css('--ink-2');
+  Chart.defaults.borderColor = css('--grid');
+  Chart.defaults.font.family = 'system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif';
+}
+
+function mkTable(el, head, rows) {
+  const t = document.querySelector(el);
+  t.innerHTML = '<tr>' + head.map((h, i) => `<th class="${i ? 'num' : ''}">${h}</th>`).join('') + '</tr>' +
+    rows.map(r => '<tr>' + r.map((c, i) => `<td class="${i ? 'num' : ''}">${c}</td>`).join('') + '</tr>').join('');
+}
+
+function heroes() {
+  const items = [
+    { v: DATA.meta.n_total.toLocaleString(), k: '주관식 응답 (2021~2025)', s: '통일부 개방 데이터 실측' },
+    { v: '33.3%', k: "2025년 응답 중 '재개 요구' 비중", s: '2021~23년 5.1% 대비 +28.2%p' },
+    { v: '1,165', k: '중단기에도 쌓인 홈페이지 설문(2025)', s: '주별 응답 집계 — 대기 수요' },
+    { v: '월 4.0만', k: '파주 DMZ평화관광 관광객 (외국인 76%)', s: '경기도 파주시 개방 데이터' },
+  ];
+  document.getElementById('heroes').innerHTML = items.map(i =>
+    `<div class="hero"><div class="v">${i.v}</div><div class="k">${i.k}</div><div class="src">${i.s}</div></div>`).join('');
+}
+
+function build() {
+  charts.forEach(c => c.destroy()); charts = [];
+  inkDefaults();
+  const S1 = css('--s1'), S2 = css('--s2'), S3 = css('--s3'), MUTED = css('--ink-muted');
+  const barOpts = { borderRadius: 4, borderSkipped: false, maxBarThickness: 42 };
+
+  // ① 연도별
+  charts.push(new Chart(cYearly, {
+    type: 'bar',
+    data: { labels: DATA.yearly.map(y => y.year), datasets: [{ label: '주관식 응답 수', data: DATA.yearly.map(y => y.n), backgroundColor: DATA.yearly.map(y => y.year === 2024 ? MUTED : S1), ...barOpts }] },
+    options: { plugins: { legend: { display: false }, tooltip: { callbacks: { footer: (c) => c[0].label === '2024' ? '견학 전면 중단 — 응답 없음' : (c[0].label === '2025' ? '특별견학만 재개' : '') } } }, scales: { y: { grid: { color: css('--grid') } }, x: { grid: { display: false } } } }
+  }));
+  mkTable('#tYearly', ['연도', '응답 수'], DATA.yearly.map(y => [y.year + (y.year === 2024 ? ' (중단)' : ''), y.n.toLocaleString()]));
+
+  // ② Top10 가로 바
+  charts.push(new Chart(cTop10, {
+    type: 'bar',
+    data: { labels: DATA.top10.map(t => t.name), datasets: [{ label: '우선순위 점수', data: DATA.top10.map(t => t.score), backgroundColor: S1, ...barOpts }] },
+    options: { indexAxis: 'y', plugins: { legend: { display: false }, tooltip: { callbacks: { afterLabel: (c) => { const t = DATA.top10[c.dataIndex]; return `개선 수요 ${t.n}건 · 난이도 가중 ${t.diff_w}`; } } } }, scales: { x: { grid: { color: css('--grid') } }, y: { grid: { display: false } } } }
+  }));
+  mkTable('#tTop10', ['과제', '수요(건)', '빈도', '불만강도', '난이도가중', '점수'],
+    DATA.top10.map(t => [t.name, t.n, t.freq, t.neg_ratio, t.diff_w, t.score]));
+
+  // ③ 전후 비교 — 변화 상위 주제만 (재개 강조)
+  const codes = ['REOPEN', 'GUIDE', 'EMOTION', 'RESERVE', 'TIME', 'ACCESS'];
+  const names = { REOPEN: '재개·확대', GUIDE: '해설 품질', EMOTION: '정서·의미', RESERVE: '예약·신청', TIME: '시간 배분', ACCESS: '교통·접근' };
+  const ba = DATA.before_after;
+  const pct = (m, c) => Math.round((m[c] || 0) * 1000) / 10;
+  charts.push(new Chart(cBefore, {
+    type: 'bar',
+    data: { labels: codes.map(c => names[c]), datasets: [
+      { label: `일반견학기 21~23 (n=${ba.n_before.toLocaleString()})`, data: codes.map(c => pct(ba.before, c)), backgroundColor: S1, ...barOpts },
+      { label: `특별견학기 2025 (n=${ba.n_after})`, data: codes.map(c => pct(ba.after, c)), backgroundColor: S2, ...barOpts },
+    ] },
+    options: { plugins: { tooltip: { callbacks: { label: (c) => `${c.dataset.label}: ${c.parsed.y}%` } } }, scales: { y: { title: { display: true, text: '주제 비중 (%)' }, grid: { color: css('--grid') } }, x: { grid: { display: false } } } }
+  }));
+  mkTable('#tBefore', ['주제', '21~23 (%)', '2025 (%)'], codes.map(c => [names[c], pct(ba.before, c), pct(ba.after, c)]));
+
+  // ④ 드릴다운
+  buildDrill(S1, S2, S3);
+
+  // ⑥ 파주
+  charts.push(new Chart(cPaju, {
+    type: 'line',
+    data: { labels: DATA.paju.map(p => p.ym), datasets: [
+      { label: '내국인', data: DATA.paju.map(p => p.domestic), borderColor: S1, backgroundColor: S1, borderWidth: 2, pointRadius: 2, pointHitRadius: 8 },
+      { label: '외국인', data: DATA.paju.map(p => p.foreign), borderColor: S2, backgroundColor: S2, borderWidth: 2, pointRadius: 2, pointHitRadius: 8 },
+    ] },
+    options: { interaction: { mode: 'index', intersect: false }, scales: { y: { grid: { color: css('--grid') } }, x: { grid: { display: false }, ticks: { maxTicksLimit: 8 } } } }
+  }));
+  mkTable('#tPaju', ['연월', '내국인', '외국인'], DATA.paju.map(p => [p.ym, p.domestic.toLocaleString(), p.foreign.toLocaleString()]));
+}
+
+let drillChart = null, curTopic = null;
+function buildDrill(S1, S2, S3) {
+  const box = document.getElementById('topicBtns');
+  const list = DATA.topics.slice(0, 9);
+  if (!curTopic) curTopic = list[0].code;
+  box.innerHTML = list.map(t =>
+    `<button aria-pressed="${t.code === curTopic}" data-code="${t.code}">${t.name} <small>${t.n}</small></button>`).join('');
+  box.querySelectorAll('button').forEach(b => b.onclick = () => { curTopic = b.dataset.code; buildDrill(S1, S2, S3); });
+
+  const t = DATA.topics.find(x => x.code === curTopic);
+  if (drillChart) drillChart.destroy();
+  drillChart = new Chart(cDrill, {
+    type: 'bar',
+    data: { labels: [t.name], datasets: [
+      { label: '만족·감사', data: [t.pos], backgroundColor: S1, borderRadius: 4, borderSkipped: false },
+      { label: '불만', data: [t.neg], backgroundColor: S2, borderRadius: 4, borderSkipped: false },
+      { label: '개선 제안', data: [t.suggest], backgroundColor: S3, borderRadius: 4, borderSkipped: false },
+    ] },
+    options: { indexAxis: 'y', maxBarThickness: 36,
+      scales: { x: { stacked: true, grid: { color: css('--grid') } }, y: { stacked: true, display: false } },
+      plugins: { legend: { position: 'bottom' } } }
+  });
+  charts.push(drillChart);
+
+  const qs = DATA.quotes.filter(q => q.topic === curTopic).slice(0, 3);
+  document.getElementById('quotes').innerHTML = qs.length
+    ? qs.map(q => `<div class="quote">“${q.text}”<div class="meta">${q.year}년 응답 · 비식별 처리</div></div>`).join('')
+    : '<p class="desc" style="margin-top:10px">이 주제의 인용 후보가 없습니다 — 표본 응답은 분류 데이터에서 확인할 수 있습니다.</p>';
+}
+
+// 토글
+document.getElementById('btnTheme').onclick = () => {
+  const r = document.documentElement;
+  const now = r.getAttribute('data-theme');
+  const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+  r.setAttribute('data-theme', (now ? now === 'dark' : dark) ? 'light' : 'dark');
+  build();
+};
+document.getElementById('btnFont').onclick = (e) => {
+  document.body.classList.toggle('big');
+  e.target.setAttribute('aria-pressed', document.body.classList.contains('big'));
+};
+
+heroes();
+build();
+</script>
+</body>
+</html>
