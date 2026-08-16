@@ -19,9 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
----
-
-데이터 이용 안내: 이 저장소의 집계 결과(data.js)는 공공데이터포털(data.go.kr)에
-개방된 통일부·파주시 공공데이터를 가공한 것으로, 원 데이터는 각 제공기관의
-이용허락 조건을 따릅니다. 원본 CSV는 이 저장소에 포함되어 있지 않습니다.
