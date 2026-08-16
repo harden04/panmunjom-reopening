@@ -16,11 +16,11 @@
 
 ## 방법론
 
-1. 수집: data.go.kr 개방 데이터 4종 (재현 스크립트 `analysis/fetch_datago.py`)
-2. 전처리·비식별: 4,517행 전량 보존, 실질 응답 4,227건 선별, 실명 노출 마스킹 (`preprocess.py`)
-3. LLM 분류: 주제 12종 × 감성 3종 × 실행 난이도 — 분류 정의서 `analysis/taxonomy.md`
-4. 블라인드 검증: 독립 재분류 200건, 주제 일치율 93.5% / 감성 98.5% (`validation_report.md`)
-5. 집계·랭킹: score = 빈도 × 불만 강도 × 실행 난이도 가중 (`aggregate.py`)
+1. 수집: data.go.kr 개방 데이터 4종 — 재현 스크립트 [analysis/fetch_datago.py](analysis/fetch_datago.py)
+2. 전처리·비식별: 4,517행 전량 보존, 실질 응답 4,227건 선별, 실명 노출 마스킹 — [analysis/preprocess.py](analysis/preprocess.py)
+3. LLM 분류: 주제 12종 × 감성 3종 × 실행 난이도 — 분류 정의서 [analysis/taxonomy.md](analysis/taxonomy.md)
+4. 블라인드 검증: 독립 재분류 200건, 주제 일치율 93.5% / 감성 98.5% — [analysis/validation_report.md](analysis/validation_report.md)
+5. 집계·랭킹: score = 빈도 × 불만 강도 × 실행 난이도 가중 — [analysis/aggregate.py](analysis/aggregate.py)
 
 ## 데이터 출처 및 이용허락
 
