@@ -107,7 +107,7 @@
 
   <section aria-labelledby="h-top10">
     <h2 id="h-top10">② 재개 시 우선 개선 과제 Top 10</h2>
-    <p class="desc">개선 수요(불만+제안 1,477건)를 <em>빈도 × 불만 강도 × 실행 난이도</em>로 점수화했습니다.
+    <p class="desc">개선 수요(불만+제안 1,480건)를 <em>빈도 × 불만 강도 × 실행 난이도</em>로 점수화했습니다.
     즉시 실행 가능한(운영 개선) 과제일수록 높은 가중치 — 재개 첫날부터 반영할 수 있는 것부터 순서대로.</p>
     <div class="chart-box"><canvas id="cTop10" height="220" role="img" aria-label="우선 개선 과제 상위 10개 가로 막대 차트"></canvas></div>
     <details class="tbl"><summary>표로 보기 (산식 값 포함)</summary><table id="tTop10"></table></details>
@@ -149,7 +149,7 @@
         <ul>
           <li><strong>견학 기회 확대</strong> (재개 요구 228건): 회차·인원 단계 확대, 대상별(일반→학생·가족→외국인) 순차 개방</li>
           <li><strong>코스 확장</strong> (218건): 돌아오지 않는 다리·대성동 등 — 유엔사 협의 사안</li>
-          <li><strong>외국인 세그먼트</strong>: 파주 DMZ 관광 월평균 4만 명, 외국인 76% — 수요는 검증됨</li>
+          <li><strong>외국인 세그먼트</strong>: 파주 DMZ 관광 월평균 4.0만 명, 외국인 76.2% — 수요는 검증됨</li>
           <li><strong>기념품·기록 서비스</strong> (95건): 자체 수익모델로 운영비 일부 상쇄</li>
         </ul>
       </div>
@@ -192,7 +192,7 @@ function heroes() {
     { v: DATA.meta.n_total.toLocaleString(), k: '주관식 응답 (2021~2025)', s: '통일부 개방 데이터 실측' },
     { v: '33.3%', k: "2025년 응답 중 '재개 요구' 비중", s: '2021~23년 5.1% 대비 +28.2%p' },
     { v: '1,165', k: '중단기에도 쌓인 홈페이지 설문(2025)', s: '주별 응답 집계 — 대기 수요' },
-    { v: '월 4.0만', k: '파주 DMZ평화관광 관광객 (외국인 76%)', s: '경기도 파주시 개방 데이터' },
+    { v: '월 4.0만', k: '파주 DMZ평화관광 관광객 (외국인 76.2%)', s: '경기도 파주시 개방 데이터' },
   ];
   document.getElementById('heroes').innerHTML = items.map(i =>
     `<div class="hero"><div class="v">${i.v}</div><div class="k">${i.k}</div><div class="src">${i.s}</div></div>`).join('');
